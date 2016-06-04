@@ -1,4 +1,19 @@
-# Elixir in action notes
+# Elixir in action
+
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Elixir in action](#elixir-in-action)
+	- [Chapter 2](#chapter-2)
+		- [2.1 REPL](#21-repl)
+		- [2.2 Variables](#22-variables)
+		- [2.3 Organizing Code](#23-organizing-code)
+			- [2.3.1 Modules](#231-modules)
+			- [2.3.2 Functions](#232-functions)
+		- [2.3.3 Functional Arity](#233-functional-arity)
+		- [2.3.4 Function Visibility](#234-function-visibility)
+		- [2.3.5 Imports and Aliases](#235-imports-and-aliases)
+
+<!-- /TOC -->
 
 ## Chapter 2
 
