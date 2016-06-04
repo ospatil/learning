@@ -88,29 +88,29 @@ a higher-arity function, providing some default arguments.
 
 ### 2.3.4 Function Visibility
 
-  ```elixir
-  defmodule TestPrivate do
-    def double(a) do # public function
-      sum(a, a)
-    end
-
-    defp sum(a, b) do # private function
-      a + b
-    end
+```elixir
+defmodule TestPrivate do
+  def double(a) do # public function
+    sum(a, a)
   end
-  ```
+
+  defp sum(a, b) do # private function
+    a + b
+  end
+end
+```
 
 ### 2.3.5 Imports and Aliases
 
-  ```elixir
-  defmodule MyModule do
-    import IO # import IO module
+```elixir
+defmodule MyModule do
+  import IO # import IO module
 
-    def my_function do
-      puts "Calling imported function." # Use puts from IO modules without module name.
-    end
+  def my_function do
+    puts "Calling imported function." # Use puts from IO modules without module name.
   end
-  ```
+end
+```
 
   > The standard library's `Kernel` module is automatically imported into every module.
 
