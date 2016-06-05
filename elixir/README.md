@@ -12,6 +12,10 @@
 		- [2.3.3 Functional Arity](#233-functional-arity)
 		- [2.3.4 Function Visibility](#234-function-visibility)
 		- [2.3.5 Imports and Aliases](#235-imports-and-aliases)
+		- [2.3.6 Module Attributes](#236-module-attributes)
+		- [2.3.7 Comments](#237-comments)
+	- [2.4 Type System](#24-type-system)
+		- [2.4.1 Numbers](#241-numbers)
 
 <!-- /TOC -->
 
@@ -140,3 +144,56 @@ end
       end
     end
   ```
+
+### 2.3.6 Module Attributes
+
+Used for two purposes
+  1. **Compile-time constants** - inlined after compilation, doesn't exist at runtime.
+  2. **Registered attributes** - Available at runtime and can be accessed at runtime by tools like  IEx, ex_doc and dializer.
+
+```elixir
+defmodule Circle do
+  # @moduledoc, @doc and @spec are registered by default by elixir. User can register his attributes too.
+  @moduledoc "Implements basic circle functions"
+
+  @pi 3.14159 # User defined attribute
+
+  @doc "Computes the area of a circle"
+  @spec area(number) :: number
+  def area(r), do: r*r*@pi
+
+  @doc "Computes the circumference of a circle"
+  @spec circumference(number) :: number
+  def circumference(r), do: 2*r*@pi
+end
+```
+
+### 2.3.7 Comments
+
+Only one type of comment - `#`.
+
+## 2.4 Type System
+
+### 2.4.1 Numbers
+
+```sh
+iex(1)> 3 # integer
+3
+iex(2)> 0xFF # integer in hex
+255
+iex(3)> 3.14 # float
+3.14
+iex(4)> 1.0e-2 # float in exponential notation
+0.01
+iex(5)> 1 + 2 * 3 # usual arithmatic operator
+7
+iex(6)> 4/2 # division always retuns a float value
+2.0
+iex(8)> div(5,2) # integer division
+2
+iex(9)> rem(5,2) # calculation of remainder
+1
+iex(10)> 1_000_000 # Syntactic sugar - _ as visual delimiter
+1000000
+iex(11)> 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 # no upper limit on interger size
+```
