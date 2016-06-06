@@ -16,6 +16,11 @@
 		- [2.3.7 Comments](#237-comments)
 	- [2.4 Type System](#24-type-system)
 		- [2.4.1 Numbers](#241-numbers)
+		- [2.4.2 Atoms](#242-atoms)
+			- [Aliases](#aliases)
+			- [Atoms as booleans](#atoms-as-booleans)
+			- [Nil and truthy values](#nil-and-truthy-values)
+		- [2.4.3 Tuples](#243-tuples)
 
 <!-- /TOC -->
 
@@ -196,4 +201,102 @@ iex(9)> rem(5,2) # calculation of remainder
 iex(10)> 1_000_000 # Syntactic sugar - _ as visual delimiter
 1000000
 iex(11)> 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 # no upper limit on interger size
+```
+
+### 2.4.2 Atoms
+
++ Literal named constants like symbols in Ruby. Start with colon, followed by combination of alphanumerics and/or underscore.
+
+  ```elixir
+  :an_atom
+  :another_atom
+  :"an atom with spaces"
+  ```
+
++ An atom consists of two parts
+  1. *text* - everything after `:`. At runtime, this goes into an *atom table*.
+  2. *value* - The data that goes into the variable, merely a reference to the atom table.
+
+#### Aliases
+
+There is another syntax for atom - drop the starting colon and start with uppercase - `AnAtom`. This gets transformed to `Elixir.AnAtom` at compile time.
+The compiler implicitly adds *Elixir.* prefix if already not present.
+
+```elixir
+iex(1)> AnAtom == :"Elixir.AnAtom"
+true
+
+iex(2)> AnAtom == Elixir.AnAtom
+true
+```
+
+We have already seen another use earlier - giving alternative names to modules.
+
+```elixir
+iex(3)> alias IO, as: MyIO
+iex(4)> MyIO.puts("Hello!")
+Hello!
+iex(5)> MyIO == Elixir.IO ## compiler emits :Elixir.IO for MyIO in the compiled binary.
+true
+```
+
+#### Atoms as booleans
+
++ Elixir doesn't have a dedicated boolean type. Instead, the atoms `:true` and `:false` are used.
++ As syntactic sugar, Elixir allows you to reference these atoms without the starting colon character.
++ The standard logical operators work with boolean atoms.
+
+```elixir
+iex(1)> :true == true
+true
+iex(2)> :false == false
+true
+iex(1)> true and false
+false
+iex(2)> false or true
+true
+iex(3)> not false
+true
+iex(4)> not :an_atom_other_than_true_or_false
+** (ArgumentError) argument error
+```
+
+#### Nil and truthy values
+
++ `:nil` atom whose functionality is similar to *null* from other languages.
+
+  ```elixir
+  iex(1)> nil == :nil
+  true
+  ```
++ The atoms `nil` and `false` are treated as *falsy* and everything else as *truthy*.
++ Works with *short-circuit* operators ||, && and !.
+
+  ```elixir
+  iex(1)> nil || false || 5 || true # || returns first value that isn't falsy.
+  5
+  iex(1)> true && 5 # && returns second expression only if first is truthy.
+  5
+  iex(2)> false && 5 # Otherwise returns first without evaluating second.
+  false
+  iex(3)> nil && 5
+  nil
+  ```
+
+### 2.4.3 Tuples
+
+Used to group fixed number of elements together.
+
+```elixir
+iex(1)> person = {"Bob", 25} # a tuple with two elements, name and age
+{"Bob", 25}
+
+\# To extract element use Kernel.elem/2 function that accepts a tuple and zero-based index
+iex(2)> age = elem(person, 1)
+25
+
+\# To modify tuple, use Kernel.put_elem/3 function. NOTE: all values are immutable, the put_element
+\# call returns a new version of tuple that must be assigned.
+iex(3)> older_person = put_elem(person, 1, 26)
+{"Bob", 26}
 ```
