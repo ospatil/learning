@@ -21,6 +21,8 @@
 			- [Atoms as booleans](#atoms-as-booleans)
 			- [Nil and truthy values](#nil-and-truthy-values)
 		- [2.4.3 Tuples](#243-tuples)
+		- [2.4.4 Lists](#244-lists)
+			- [Recursive list definition](#recursive-list-definition)
 
 <!-- /TOC -->
 
@@ -299,4 +301,70 @@ iex(2)> age = elem(person, 1)
 \# call returns a new version of tuple that must be assigned.
 iex(3)> older_person = put_elem(person, 1, 26)
 {"Bob", 26}
+```
+
+### 2.4.4 Lists
+
++ Dynamic variable-sized collection of data.
++ Work like singly linked list. Most of the operations are O(n) complexity except adding element at the beginning which is O(1).
++ `Enum` module can be used on lists.
+
+```elixir
+iex(1)> prime_numbers = [1, 2, 3, 5, 7] # creating list
+[1, 2, 3, 5, 7]
+
+iex(2)> length(prime_numbers) # Kernel.length/1 function to find length
+5
+
+iex(3)> Enum.at(prime_numbers, 4) # get element - as usual 0-based index
+7
+
+iex(4)> 5 in prime_numbers # check if list contains an element
+true
+
+iex(5)> 4 in prime_numbers
+false
+
+iex(8)> prime_numbers = List.replace_at(prime_numbers, 0, 11) # replace element, note a new collection is returned
+[11, 2, 3, 5, 7]
+
+iex(9)> List.insert_at(prime_numbers, 4, 1) # insert at position
+[11, 2, 3, 5, 1, 7]
+
+iex(10)> List.insert_at(prime_numbers, -1, 1) # append, -1 indicates append at end
+[11, 2, 3, 5, 7, 1]
+
+iex(11)> [1,2,3] ++ [4,5] # list concatenation
+[1, 2, 3, 4, 5]
+```
+
+#### Recursive list definition
+
++ List can be viewed as recursive structure - a pair of (*head*, *tail*) - where *head* is the first elemtn and *tail* points to (*head*, *tail*) pair of remaining elements.
++ Elixir has special syntax to support recursive list definitions - `a_list = [head | tail]`
+
+```elixir
+iex(1)> [1 | []]
+[1]
+iex(2)> [1 | [2 | []]]
+[1, 2]
+iex(3)> [1 | [2]]
+[1, 2]
+iex(4)> [1 | [2, 3, 4]]
+[1, 2, 3, 4]
+iex(1)> [1 | [2 | [3 | [4 | []]]]]
+[1, 2, 3, 4]
+iex(1)> hd([1, 2, 3, 4]) # getting head of the list
+1
+iex(2)> tl([1, 2, 3, 4]) # getting tail of the list
+[2, 3, 4]
+```
+
++ `hd` and `tl` both are O(1). It's simple and efficiant to push new element to the top of the list.
+
+```elixir
+iex(1)> a_list = [5, :value, true]
+[5, :value, true]
+iex(2)> new_list = [:new_element | a_list]
+[:new_element, 5, :value, true]
 ```
