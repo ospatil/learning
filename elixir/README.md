@@ -23,6 +23,9 @@
 		- [2.4.3 Tuples](#243-tuples)
 		- [2.4.4 Lists](#244-lists)
 			- [Recursive list definition](#recursive-list-definition)
+		- [2.4.5 Immutability](#245-immutability)
+			- [Benefits](#benefits)
+		- [2.4.6 Maps](#246-maps)
 
 <!-- /TOC -->
 
