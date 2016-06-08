@@ -360,7 +360,7 @@ iex(2)> tl([1, 2, 3, 4]) # getting tail of the list
 [2, 3, 4]
 ```
 
-+ `hd` and `tl` both are O(1). It's simple and efficiant to push new element to the top of the list.
++ `hd` and `tl` both are O(1). It's simple and efficient to push new element to the top of the list.
 
 ```elixir
 iex(1)> a_list = [5, :value, true]
@@ -368,3 +368,71 @@ iex(1)> a_list = [5, :value, true]
 iex(2)> new_list = [:new_element | a_list]
 [:new_element, 5, :value, true]
 ```
+
+### 2.4.5 Immutability
+
+The default immutability of the elixir data allows memory sharing and efficiency.
+
+For example -
+  1. *Modifying a list* - when n<sup>th</sup> is modified, the new version will contain shallow copies of the first *n - 1* elements, followed by modified element and tail is completed shared as shown in the below image -
+
+  ![alt text](./img/list-modifing.png "Modifying a List")
+
+  2. *Pushing element at the top of the list* - it doesn't copy anything so it's a least expensive operation.
+
+  ![alt text](./img/list-push-to-top.png "Pushing to the top of a List")
+
+  >This is often used in Elixir programs when iteratively building lists. In such cases, it’s best to push consecutive elements to the top and then,after the list is constructed, reverse the entire list in a single pass
+
+#### Benefits
+
+  1. Side-effect free Functions
+  2. Data consistency
+
+  The above two points allow us to do something like atomic in-memory operations. For example -
+
+  ```elixir
+  def complex_transformation(original_data) do
+    original_data
+    |> transformation_1(...)
+    |> transformation_2(...)
+    ...
+  end
+  ```
+
+  If something goes wrong in any of the two steps, `complex_transformation` can simply return `original_data` thereby reverting changes.
+
+### 2.4.6 Maps
+
+  + New data type added in Erlang 17.
+  + In the current version, doesn't perform well with large number of elements. Use `hashDict` for such usage.
+  + Maps are appropriate when you want to combine a few fields into a single structure. This use case is similar to tuple but it provides the advantage of field access by name.
+
+  ```elixir
+  iex(1)> bob = %{:name => "Bob", :age => 25, :works_at => "Initech"}
+  %{age: 25, name: "Bob", works_at: "Initech"}
+
+  iex(2)> bob = %{name: "Bob", age: 25, works_at: "Initech"} # if keys are atoms use this shortcut syntax
+  %{age: 25, name: "Bob", works_at: "Initech"}
+
+  iex(3)> bob[:works_at] # retrieve a field
+  "Initech"
+
+  iex(4)> bob[:non_existent_field] # retrieve a non-existent field
+  nil
+
+  iex(5)> bob.age # if key is atom this special syntax can be used
+  25
+
+  iex(6)> bob.non_existent_field # but it fails for non-existent field
+  ** (KeyError) key :non_existent_field not found
+
+  iex(8)> %{bob | age: 26, works_at: "Initrode"} # changing attributes
+  %{age: 26, name: "Bob", works_at: "Initrode"}
+
+  iex(9)> Map.put(bob, :salary, 50000) # use Map module for map manipulations
+  %{age: 25, name: "Bob", salary: 50000, works_at: "Initech"}
+
+  iex(10)> Dict.put(bob, :salary, 50000) # or more general-purpose Dict module
+  %{age: 25, name: "Bob", salary: 50000, works_at: "Initech"}
+  ```
