@@ -26,6 +26,8 @@
 			- [2.4.5 Immutability](#245-immutability)
 				- [Benefits](#benefits)
 			- [2.4.6 Maps](#246-maps)
+			- [2.4.7 Binaries and bitstrings](#247-binaries-and-bitstrings)
+			- [2.4.8 Strings](#248-strings)
 
 <!-- /TOC -->
 
@@ -438,3 +440,107 @@
   iex(10)> Dict.put(bob, :salary, 50000) # or more general-purpose Dict module
   %{age: 25, name: "Bob", salary: 50000, works_at: "Initech"}
   ```
+
+#### 2.4.7 Binaries and bitstrings
+
+  + A binary is a chunk of bytes.
+  + Created by enclosing the byte sequence between `<<` and `>>` operators.
+
+  ```elixir
+  iex(2)> <<256>> # value bigger than 255 is truncated to byte size
+  <<0>>
+
+  iex(3)> <<257>>
+  <<1>>
+
+  iex(4)> <<512>>
+  <<0>>
+
+  iex(5)> <<257::16>> # mentioning size
+  <<1, 1>> # using 2 bytes both with value 1 because 257 = 00000001 00000001
+
+  iex(6)> <<1::4, 15::4>> # size specifier need not be multiplier of 8
+  <<31>> # resulting value is 1 byte and output is normalized to 31 (0001 1111)
+
+  iex(7)> <<1::1, 0::1, 1::1>> # if total size is not multiplier of 8, its called bit-string
+  <<5::size(3)>>
+
+  iex(8)> <<1, 2>> <> <<3, 4>> # concatenate 2 binaries
+  <<1, 2, 3, 4>>
+  ```
+
+#### 2.4.8 Strings
+
+  Elixir doesn't have a dedicated string type. A string is represented by either a **binary** or a **list type**.
+
+  1. Binary strings - the usual double-quotes syntax.
+
+    ```elixir
+    iex(1)> "This is a string"
+    "This is a string"
+
+    iex(2)> "Embedded expression: #{3 + 0.14}" # embedded expressions
+    "Embedded expression: 3.14"
+
+    iex(3)> "\r \n \" \\" # classical \ escaping works
+
+    \# strings can be multi-line
+    iex(4)> "
+          This is
+          a multiline string
+          "
+
+    iex(5)> ~s(This is also a string) #sigil
+    "This is also a string"
+
+    iex(6)> ~s("Do... or do not. There is no try." -Master Yoda) # sigils are useful to include quotes
+    "\"Do... or do not. There is no try.\" -Master Yoda"
+
+    iex(7)> ~S(Not interpolated #{3 + 0.14}) # uppercase sigil - doesn't interpolate or escape
+    "Not interpolated \#{3 + 0.14}"
+    iex(8)> ~S(Not escaped \n)
+    "Not escaped \\n"
+
+    \# heredocs
+    iex(9)> """
+    Heredoc must end on its own line """
+    """
+    "Heredoc must end on its own line \"\"\"\n"
+
+    iex(10)> "String" <> " " <> "concatenation" # strings are binaries so can be concatenated with <>
+    "String concatenation"
+    ```
+
+  2. Character lists - alternative way to represent strings using single-quotes, which is essentially a list of integers in which each element represents a single character.
+
+    ```elixir
+    iex(1)> 'ABC'
+    'ABC'
+
+    iex(2)> [65, 66, 67] # same as above i.e. a list of integers
+    'ABC'
+
+    iex(3)> 'Interpolation: #{3 + 0.14}' # interpolation
+    'Interpolation: 3.14'
+
+    iex(4)> ~c(Character list sigil) # character list sigil
+    'Character list sigil'
+
+    iex(5)> ~C(Unescaped sigil #{3 + 0.14})
+    'Unescaped sigil \#{3 + 0.14}'
+
+    iex(6)> '''
+    Heredoc
+    '''
+    'Heredoc\n'
+    ```
+
+    Character lists are not compatible with binary strings. Prefer binary strings over character lists.
+
+    ```elixir
+    iex(7)> String.to_char_list("ABC") # converting binary string to character list
+    'ABC'
+
+    iex(8)> List.to_string('ABC') # converting character list to binary string
+    "ABC"
+    ```
