@@ -34,6 +34,15 @@
 		- [HashDict](#hashdict)
 		- [HashSet](#hashset)
 	- [2.4.12 IO lists](#2412-io-lists)
+- [2.5 operators](#25-operators)
+- [2.6 Macros](#26-macros)
+- [2.7 Runtime](#27-runtime)
+	- [2.7.1 Modules and functions at the runtime](#271-modules-and-functions-at-the-runtime)
+		- [Module names and atoms](#module-names-and-atoms)
+		- [Pure Erlang modules](#pure-erlang-modules)
+		- [Dynamically calling functions](#dynamically-calling-functions)
+	- [2.7.2 Starting the runtime](#272-starting-the-runtime)
+		- [The mix tool](#the-mix-tool)
 
 <!-- /TOC -->
 
@@ -745,4 +754,168 @@ iex(4)> Enum.each(
 
   iex(4)> IO.puts iolist
   This is an IO list.
+  ```
+
+## 2.5 operators
+
+  + *comparison operators*
+
+  | Operator | Description |
+  | ---------| ----------- |
+  | ===, !== | Strict equality/inequality |
+  | ==, != | Weak equality/inequality |
+  | <, >, <=, >= | Less than, greater than, less than or equal, greater than or equal |
+
+  ```elixir
+  iex(1)> 1 == 1.0 # weak equality
+  true
+  iex(2)> 1 === 1.0 # Strict equality
+  false
+  ```
+
+  + Many operators are functions in Elixir. For example, instead of calling `a + b` we can call `Kernel.+(a, b)`.
+
+## 2.6 Macros
+  + Macros are compile-time code transformers. For example -
+
+  ```elixir
+  unless some_expression do # unless macro gets transformed to to something like below
+    block_1
+  else
+    block_2
+  end
+
+  if some_expression do
+    block_2
+  else
+    block_1
+  end
+  ```
+
+## 2.7 Runtime
+
+### 2.7.1 Modules and functions at the runtime
+
+  + A BEAM instance is started as OS process (with name *beam*) and everything runs inside it.
+  + The VM keeps track of all modules loaded. When a function is called, BEAM first checks if the module is loaded. If it is, the function is executed. Otherwise, BEAM tries to find the compiled module file - the bytecode - on disk and load it and then execute the function.
+  + Each compiled module resides in a separate file. The name of the file is the module name with extension *.beam*.
+
+#### Module names and atoms
+
+  + This is how a module is defined -
+  ```Elixir
+  defmodule Geometry do
+  ...
+  end
+
+  iex(1)> Geometry == :"Elixir.Geometry" # the module name Geometry is atom
+  true
+  ```
+
+  + Compiling a source file -
+
+  ```sh
+  $ elixirc source.ex
+  ```
+
+  + When the above source is compiled, the file generated on disk is named `Elixir.Geometry.beam` regardless of the source file name.
+  + At runtime When a function is called, BEAM tries to look up for the modules at first in *current folder* and then in the *code paths*.
+  + When BEAM is started with Elixir tools (such as iex), some code paths are predefined for us.
+  + You can add additional code paths using the `-pa` switch.
+
+  ```sh
+  $ iex -pa my/code/path -pa another/code/path
+  ```
+
+  + You can check which code paths are used at runtime by calling the Erlang function `:code.get_path`.
+  + If  a module is loaded, the runtime won't search for it on the disk. This can be used when starting a shell to auto-load modules. The following command compiles the source file and then immediately loads all generated modules. Notice that in this case, beam files aren’t saved to disk.
+
+  ```sh
+  $ iex my_source.ex
+  ```
+
+  + similarly, modules can be defined in the shell. Bytecode is not saved on the disk for such case too.
+
+  ```elixir
+  iex(1)> defmodule MyModule do
+            def my_fun, do: :ok
+          end
+  iex(2)> MyModule.my_fun
+  :ok
+  ```
+
+#### Pure Erlang modules
+
+  + In Erlang, modules names are atoms too. Erlang functions can be called from Elixir using the following syntax -
+
+  ```elixir
+  :code.get_path
+  ```
+
+  + Elixir modules are nothing more than Erlang modules with fancier name (like Elixir.MyModule).
+  + You can create Elixir modules with simple names although it's not recommended.
+
+  ```elixir
+  defmodule :my_module do
+  ...
+  end
+  ```
+
+#### Dynamically calling functions
+
+  + Use `Kernel.apply/3` function for dynamically calling functions at runtime.
+
+  ```elixir
+  iex(1)> apply(IO, :puts, ["Dynamic function call."]) # 3 args - MFA (module, function, arguments)
+  Dynamic function call.
+  ```
+
+### 2.7.2 Starting the runtime
+
+  + There are multiple ways to start the runtime.
+
+    + *Interactive shell* - When you start shell with `iex`, BEAM instance is started underneath. NOTE that the input is interpreted not compiled, so don't measure performance directly in `iex`.
+
+    + *Running scripts* -
+
+    ```sh
+    $ elixir my_source.exs #.exs is the recommended extension for scripts OR
+    $ elixir --no-halt script.exs # --no-halt keeps the BEAM instance running (say for concurrent tasks started from scipt)
+    ```
+
+    Following actions take place when a script is run -
+
+      1. The BEAM instance is started.
+      2. The file my_source.ex is compiled in-memory, and the resulting modules are loaded to the VM. No beam file is generated on the disk.
+      3. Whatever code resides outside of a module is interpreted.
+      4. Once everything is finished, BEAM is stopped.
+
+      ```elixir
+      defmodule MyModule do
+        def run do
+          IO.puts("Called MyModule.run")
+        end
+      end
+      MyModule.run # code outside of module is executed immediately.
+      ```
+
+#### The mix tool
+
+  + Used to manage projects made up of multiple source files.
+
+  ```sh
+  $ mix new my_project # create new project
+  \# mix makes sure ebin folder (where beam files are placed) is in the load path.
+  $ cd my_project
+
+  $ mix compile # compile
+  Compiled lib/my_project.ex
+  Compiled lib/my_project/supervisor.ex
+  Generated my_project.app
+
+  $ mix run # Starts the system; terminates as soon as MyProject.start finishes
+
+  $ mix run --no-halt # Starts the system, doesn’t terminate
+
+  $ iex -S mix run # Starts the system and then loads the interactive shell
   ```
