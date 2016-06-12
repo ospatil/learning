@@ -1,8 +1,8 @@
-# Elixir in action
+# Basics (from Elixir in action)
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Elixir in action](#elixir-in-action)
+- [Basics (from Elixir in action)](#basics-from-elixir-in-action)
 	- [Chapter 2](#chapter-2)
 		- [2.1 REPL](#21-repl)
 		- [2.2 Variables](#22-variables)
@@ -32,6 +32,10 @@
 			- [2.4.10 Other built-in types](#2410-other-built-in-types)
 			- [2.4.11 Higher-level types](#2411-higher-level-types)
 				- [Range](#range)
+				- [Keyword lists](#keyword-lists)
+				- [HashDict](#hashdict)
+				- [HashSet](#hashset)
+			- [2.4.12 IO lists](#2412-io-lists)
 
 <!-- /TOC -->
 
@@ -551,37 +555,37 @@
 
 #### 2.4.9 First-class functions
 
-  ```elixir
-  iex(1)> square = fn(x) -> # anonymous function or lambda
-            x * x
-          end
+```elixir
+iex(1)> square = fn(x) -> # anonymous function or lambda
+          x * x
+        end
 
-  iex(2)> square.(5) # calling a lambda using .
-  25
+iex(2)> square.(5) # calling a lambda using .
+25
 
-  iex(5)> Enum.each(
-            [1, 2, 3],
-            fn(x) -> IO.puts(x) end
-            )
-  1
-  2
-  3
-
-  iex(6)> Enum.each(
+iex(5)> Enum.each(
           [1, 2, 3],
-          &IO.puts/1 # capture operator & - shortcut if the lambda is just calling IO/puts
+          fn(x) -> IO.puts(x) end
           )
+1
+2
+3
 
-  iex(7)> lambda = fn(x, y, z) -> x * y + z end # this can be shortened
+iex(6)> Enum.each(
+        [1, 2, 3],
+        &IO.puts/1 # capture operator & - shortcut if the lambda is just calling IO/puts
+        )
 
-  iex(8)> lambda = &(&1 * &2 + &3) # to this
+iex(7)> lambda = fn(x, y, z) -> x * y + z end # this can be shortened
 
-  iex(1)> outside_var = 5
-  iex(2)> lambda = fn() -> IO.puts(outside_var) end # lambdas are closures
-  iex(3)> outside_var = 6 # rebinding does not affect the closure
-  iex(4)> lambda.()
-  5
-  ```
+iex(8)> lambda = &(&1 * &2 + &3) # to this
+
+iex(1)> outside_var = 5
+iex(2)> lambda = fn() -> IO.puts(outside_var) end # lambdas are closures
+iex(3)> outside_var = 6 # rebinding does not affect the closure
+iex(4)> lambda.()
+5
+```
 
 #### 2.4.10 Other built-in types
 
@@ -593,20 +597,156 @@
 
 ##### Range
 
-  ```elixir
-  iex(1)> range = 1..2
+```elixir
+iex(1)> range = 1..2
 
-  iex(2)> 2 in range
+iex(2)> 2 in range
+true
+
+iex(3)> -1 in range
+false
+
+iex(4)> Enum.each(
+          1..3, # range is enumerable so Enum.each can iterate on it
+          &IO.puts/1
+          )
+1
+2
+3
+```
+
+##### Keyword lists
+
+  + A special case of list where each element is two-element tuple and first element of each tuple is an atom.
+  + Often used for small-size key-value structures where keys are atoms.
+  + *Maps or keyword lists?*
+    + They are used primarily for backward compatibility as maps is a very recent addition to Erlang/elixir.
+    + A keyword list can contain multiple values for same key.
+    + Ordering can be controlled for keyword list elements.
+
+  ```elixir
+  iex(1)> days = [{:monday, 1}, {:tuesday, 2}, {:wednesday, 3}]
+
+  iex(2)> days = [monday: 1, tuesday: 2, wednesday: 3] # more elegant syntax
+
+  iex(3)> Keyword.get(days, :monday) # Use Keyword module to work with a keyword list
+  1
+
+  iex(4)> Keyword.get(days, :noday)
+  nil
+
+  iex(5)> days[:tuesday] # map-like access, BUT NOTE it's a list so lookup is still O(n)
+  2
+  ```
+
+  + Most often useful to pass arbitrary number of optional arguments.
+
+  ```elixir
+  iex(6)> Float.to_string(1/3) # default behaviour
+  "3.33333333333333314830e-01"
+
+  iex(7)> Float.to_string(1/3, [decimals: 2]) # pass additional options
+  "0.33"
+
+  iex(8)> Float.to_string(1/3, decimals: 2, compact: true) # can omit [] is last argument is keyword list
+  "0.33"
+
+  def my_fun(arg1, arg2, opts \\ []) do
+    ...
+  end # useful idiom for optional arguments. Accept keyword list as last arg and default to empty list
+  ```
+
+##### HashDict
+
+  + *HashDict* module implements arbitrarily sized ley-value lookup structure.
+  + More performant than map and keyword list for larger collections.
+  + Maps have more elegant syntax, can pattern-match as opposed to *HashDict*. Erlang team os optimizing maps in every release. Therefore, *HashDict* might be deprecated. So, limit the usage accordingly.
+
+  ```elixir
+  iex(1)> HashDict.new
+  \#HashDict<[]>
+
+  iex(2)> days = [monday: 1, tuesday: 2, wednesday: 3] |> # pre-populated HashDict
+  Enum.into(HashDict.new) # Enum.into/2 converts anything enumerable into anything collactible
+  \#HashDict<[monday: 1, tuesday: 2, wednesday: 3]>
+
+  iex(3)> HashDict.get(days, :monday) # getting values
+  1
+  iex(4)> HashDict.get(days, :noday)
+  nil
+
+  iex(5)> days[:tuesday] # map-like [] operator for getting
+  2
+
+  iex(6)> days = HashDict.put(days, :thursday, 4) # modify a HashDict
+
+  iex(7)> days[:thursday]
+  4
+
+  iex(8)> Enum.each( # HashDict is enumerable, order is not guaranteed
+            days,
+            fn(key_value) ->
+            key = elem(key_value, 0)
+            value = elem(key_value, 1)
+            IO.puts "#{key} => #{value}"
+            end
+            )
+  monday => 1
+  thursday => 4
+  tuesday => 2
+  wednesday => 3
+  ```
+
+##### HashSet
+
+  + Set implementation - store of unique values where value can be of any type.
+
+  ```elixir
+  iex(1)> days = [:monday, :tuesday, :wednesday] |> Enum.into(HashSet.new)
+  \#HashSet<[:monday, :tuesday, :wednesday]>
+
+  iex(2)> HashSet.member?(days, :monday)
   true
 
-  iex(3)> -1 in range
+  iex(3)> HashSet.member?(days, :noday)
   false
 
-  iex(4)> Enum.each(
-            1..3, # range is enumerable so Enum.each can iterate on it
-            &IO.puts/1
-            )
-  1
-  2
-  3
+  iex(4)> days = HashSet.put(days, :thursday)
+  \#HashSet<[:monday, :tuesday, :wednesday, :thursday]>
+
+  iex(5)> Enum.each(days, &IO.puts/1) # HashSet is enumerable
+  monday
+  tuesday
+  wednesday
+  thursday
+  ```
+
+#### 2.4.12 IO lists
+
+  + A special list useful for incrementally building output to be forwarded to and IO device such as network or a file.
+  + Each element of an IO list must be
+    + An integer in the range of 0 to 255
+    + A binary
+    + An IO list
+  + In other words, an IO list is a deeply nested structure in which leaf elements are plain bytes (or binaries).
+
+  ```elixir
+  iex(1)> iolist = [[['H', 'e'], "llo,"], " worl", "d!"]
+
+  iex(2)> IO.puts iolist # IO functions work directly and efficiently with IO lists
+  Hello, world!
+  ```
+
+  + IO lists are useful to incrementally build a stream of bytes. Append to and IO list is O(1).
+
+  ```elixir
+  iex(3)> iolist = [] # initialize an IO list
+  iolist = [iolist, "This"] # multiple appends
+  iolist = [iolist, " is"]
+  iolist = [iolist, " an"]
+  iolist = [iolist, " IO list."]
+  [[[[[], "This"], " is"], " an"], " IO list."] # final IO list
+
+  iex(4)> IO.puts iolist
+  This is an IO list.
   ```
