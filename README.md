@@ -1,2 +1,2 @@
-# notes
-Notes taken while learning new languages. Refer to sub-directories for details.
+# Study Notes
+Notes taken while learning new languages. Primarily for personal consumption. Refer to sub-directories for details.
