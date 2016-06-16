@@ -7,6 +7,11 @@
 	- [3.1.2 Matching tuples](#312-matching-tuples)
 	- [3.1.3 Matching constants](#313-matching-constants)
 	- [3.1.4 Variables in patterns](#314-variables-in-patterns)
+	- [3.1.5 Matching lists](#315-matching-lists)
+	- [3.1.6 Matching maps](#316-matching-maps)
+	- [3.1.7 Matching bitstrings and binaries](#317-matching-bitstrings-and-binaries)
+		- [Matching binary strings](#matching-binary-strings)
+	- [3.1.8 Compound matches](#318-compound-matches)
 
 <!-- /TOC -->
 
@@ -134,4 +139,141 @@
 
   iex(9)> {^expected_name, _} = {"Alice", 30} # Matches to the content of the variable expected_name
   ** (MatchError) no match of right hand side value: {"Alice", 30}
+  ```
+
+### 3.1.5 Matching lists
+  + Works similar to tuples.
+
+  ```elixir
+  iex(1)> [first, second, third] = [1, 2, 3]
+  [1, 2, 3]
+
+  [1, second, third] = [1, 2, 3] # first element must be 1
+  [first, first, first] = [1, 1, 1] # all elements must have same value
+  [first, second, _ ] = [1, 2, 3] # don't care about 3rd element but it must be present
+  [^first, second, _ ] = [1, 2, 3] # first element must have the same value as the variable first
+  ```
+
+  + Lists are often matched by relying on their recursive nature.
+
+  ```elixir
+  iex(3)> [head | tail] = [1, 2, 3]
+  [1, 2, 3]
+
+  iex(4)> head
+  1
+
+  iex(5)> tail
+  [2, 3]
+
+  iex(6)> [min | _] = Enum.sort([3,2,1]) # an inefficient way of getting smallest element in the list
+  iex(7)> min
+  1
+  ```
+
+### 3.1.6 Matching maps
+
+```elixir
+iex(1)> %{name: name, age: age} = %{name: "Bob", age: 25}
+%{age: 25, name: "Bob"}
+
+iex(2)> name
+"Bob"
+
+iex(3)> age
+25
+
+iex(4)> %{age: age} = %{name: "Bob", age: 25} # left-side pattern need not contain all keys
+iex(5)> age
+25
+
+iex(6)> %{age: age, works_at: works_at} = %{name: "Bob", age: 25} # fail because pattern contains key not there in map
+** (MatchError) no match of right hand side value
+```
+
+### 3.1.7 Matching bitstrings and binaries
+
+```elixir
+iex(1)> binary = <<1, 2, 3>>
+<<1, 2, 3>>
+
+iex(2)> <<b1, b2, b3>> = binary # a binary match for a 3-byte binary
+<<1, 2, 3>>
+iex(3)> b1
+1
+iex(4)> b2
+2
+iex(5)> b3
+3
+
+iex(6)> <<b1, rest :: binary>> = binary # take apart binary by taking first byte in one variable and rest into other.
+<<1, 2, 3>>
+iex(7)> b1
+1
+iex(8)> rest
+<<2, 3>>
+
+iex(9)> <<a :: 4, b :: 4>> = <<155>> # pattern a::4 states a four-bit value is expected. 155 = 1001 (9) 1011 (11)
+<<155>>
+iex(10)> a
+9
+iex(11)> b
+11
+```
+
+#### Matching binary strings
+
+```elixir
+iex(13)> <<b1, b2, b3>> = "ABC"
+"ABC"
+iex(13)> b1
+65
+iex(14)> b2
+66
+iex(15)> b3
+67
+
+iex(16)> command = "ping www.example.com"
+"ping www.example.com"
+iex(17)> "ping " <> url = command # the expectation is command variable is a binary string starting with "ping "
+"ping www.example.com"
+iex(18)> url # since the expectation matches, rest of the string is bound to the variable url
+"www.example.com"
+```
+
+### 3.1.8 Compound matches
+  + Patterns can be arbitrarily nested.
+
+  ```elixir
+  iex(1)> [_, {name, _}, _] = [{"Bob", 25}, {"Alice", 30}, {"John", 35}]
+  ```
+
+  + Match expressions can be chained.
+
+  ```elixir
+  iex(3)> a = (b = 1 + 3) # parens are optional so it could be written as a = b = 1 + 3
+  4
+  ```
+
+  In the above example, following things happen:
+
+    1. The expression 1 + 3 is evaluated.
+    2. The result (4) is matched against the pattern b.
+    3. The result of the inner match (which is again 4) is matched against the pattern a.
+
+  Some more useful examples of this are:
+
+  ```elixir
+  iex(5)> :calendar.local_time
+  {{2013, 11, 11}, {21, 28, 41}}
+
+  iex(6)> date_time = {_, {hour, _, _}} = :calendar.local_time # retrieve datetime as well as hour
+
+  iex(7)> {_, {hour, _, _}} = date_time = :calendar.local_time # the ordering can be swapped.
+
+  iex(8)> date_time
+  {{2013, 11, 11}, {21, 32, 34}}
+
+  iex(9)> hour
+  21
   ```
