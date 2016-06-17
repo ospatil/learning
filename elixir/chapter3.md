@@ -12,6 +12,10 @@
 	- [3.1.7 Matching bitstrings and binaries](#317-matching-bitstrings-and-binaries)
 		- [Matching binary strings](#matching-binary-strings)
 	- [3.1.8 Compound matches](#318-compound-matches)
+- [3.2 Matching with functions](#32-matching-with-functions)
+	- [3.2.1 Multiclause functions](#321-multiclause-functions)
+	- [3.2.2 Guards](#322-guards)
+	- [3.2.3 Multiclause lambdas](#323-multiclause-lambdas)
 
 <!-- /TOC -->
 
@@ -276,4 +280,186 @@ iex(18)> url # since the expectation matches, rest of the string is bound to the
 
   iex(9)> hour
   21
+  ```
+
+## 3.2 Matching with functions
+
+  + To recall, a basic function definition is
+
+  ```elixir
+  def my_fun(arg1, arg2) do
+    ...
+  end
+  ```
+
+  The parameters are patterns and they are matched to the arguments user passes in.
+
+### 3.2.1 Multiclause functions
+
+  + Elxir allows us to *"overload"* a function by specifying multiple *clauses* for a function with same arity. NOTE that from callers perspective, a multiclause function is a single function. You can't directly reference a specific clause.
+
+  Consider an example - creating a `Geometry` module. The shapes it handles are tuples with first element of each denoting the type.
+
+  ```elixir
+  rectangle = {:rectangle, 4, 5}
+  square = {:square, 5}
+  circle = {:circle, 4}
+
+  defmodule Geometry do
+    def area({:rectangle, a, b}) do # first clause of area/1
+      a * b
+    end
+
+    def area({:square, a}) do # second clause of area/1
+      a * a
+    end
+
+    def area({:circle, r}) do # third clause of area/1
+      r * r * 3.14
+    end
+  end
+
+  iex(1)> Geometry.area({:rectangle, 4, 5})
+  20
+  iex(2)> Geometry.area({:square, 5})
+  25
+  iex(3)> Geometry.area({:circle, 4})
+  50.24
+
+  iex(4)> Geometry.area({:triangle, 1, 2, 3}) # error if match fails. area function doesn't have a match for triangle
+  ** (FunctionClauseError) no function clause matching in Geometry.area/1
+  geometry.ex:2: Geometry.area({:triangle, 1, 2, 3})
+  ```
+
+  + We can add a default clause that always matches. Useful to return a term indicating failure instead of raising an error as above.
+
+  ```elixir
+  defmodule Geometry do
+    def area({:rectangle, a, b}) do
+      a * b
+    end
+
+    def area({:square, a}) do
+      a * a
+    end
+
+    def area({:circle, r}) do
+      r * r * 3.14
+    end
+
+    def area(unknown) do # unknown is a variable therefore the match always succeeds with any argument
+      {:error, {unknown_shape, unknown}}
+    end
+  end
+
+  iex(1)> Geometry.area({:square, 5})
+  25
+  iex(2)> Geometry.area({:triangle, 1, 2, 3})
+  {:error, {:unknown_shape, {:triangle, 1, 2, 3}}}
+  ```
+
+  + Always group together clauses of same function.
+  + The sequence of the clauses matters. The matching takes place from top to down. If we move the "unknown" clause as first clause, it will match to any argument that is passed in every time and no other clauses will match.
+
+### 3.2.2 Guards
+
+  + **Guards** allow to add additional expectations that must be satisfied by the caller of a function.
+
+  ```elixir
+  defmodule TestNum do
+    def test(x) when x < 0 do
+    :negative
+    end
+
+    def test(0), do: :zero
+
+    def test(x) when x > 0 do
+    :positive
+    end
+  end
+
+  iex(1)> TestNum.test(-1)
+  :negative
+  iex(2)> TestNum.test(0)
+  :zero
+  iex(3)> TestNum.test(1)
+  :positive
+  ```
+
+  + If we call above with non-number, we get strange result owing to Elixir's type ordering that the comparison operators use.
+
+  ```elixir
+  iex(4)> TestNum.test(:not_a_number)
+  :positive
+  ```
+
+  The type ordering is as follows - `number < atom < reference < fun < port < pid < tuple < map < list < bitstring (binary)`
+
+  To fix above, we can use Kernel.is_number/1 to add a number check.
+
+  ```elixir
+  defmodule TestNum do
+    def test(x) when is_number(x) and x < 0 do
+    :negative
+    end
+
+    def test(0), do: :zero
+
+    def test(x) when is_number(x) and x > 0 do
+    :positive
+    end
+  end
+
+  iex(1)> TestNum.test(-1)
+  :negative
+  iex(2)> TestNum.test(:not_a_number) # no match therefore error
+  ** (FunctionClauseError) no function clause matching in TestNum.test/1
+  ```
+
+  + Guards can make use of a limited subset of operators and functions.
+
+    + Comparison operators (==, !=, ===, !==, >, <, <=, >=)
+    + Boolean operators (and, or) and negation operators (not, !)
+    + Arithmetic operators (+, -, *, /)
+    + <> and ++ as long as the left side is a literal
+    + in operator
+    + Type-check functions from the Kernel module (for example, is_number/1, is_atom/1, and so on)
+    + Additional Kernel function abs/1, bit_size/1, byte_size/1, div/2, elem/2, hd/1, length/1, map_size/1, node/0, node/1, rem/2, round/1, self/0, tl/1, trunc/1, and tuple_size/1
+
+  + Error raised in the guard won't be propagated and the guard expression will return false.
+
+  ```elixir
+  defmodule ListHelper do
+    def smallest(list) when length(list) > 0 do
+      Enum.min(list)
+    end
+
+    def smallest(_), do: {:error, :invalid_argument}
+  end
+
+  iex(1)> ListHelper.smallest(123) # length/1 only makes sense on lists so the guard of first clause returns false and second clause is executed.
+  {:error, :invalid_argument}
+  ```
+
+### 3.2.3 Multiclause lambdas
+
+  + Lambdas may also contain multiple clauses.
+
+  ```elixir
+  iex(3)> test_num = fn
+            x when is_number(x) and x < 0 ->
+              :negative
+
+            0 -> :zero
+
+            x when is_number(x) and x > 0 ->
+              :positive
+            end
+
+  iex(4)> test_num.(-1)
+  :negative
+  iex(5)> test_num.(0)
+  :zero
+  iex(6)> test_num.(1)
+  :positive
   ```
