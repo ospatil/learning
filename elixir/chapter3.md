@@ -16,6 +16,9 @@
 	- [3.2.1 Multiclause functions](#321-multiclause-functions)
 	- [3.2.2 Guards](#322-guards)
 	- [3.2.3 Multiclause lambdas](#323-multiclause-lambdas)
+- [3.3 Conditionals](#33-conditionals)
+	- [3.3.1 Branching with multiclause functions](#331-branching-with-multiclause-functions)
+	- [3.3.2 Classical branching constructs](#332-classical-branching-constructs)
 
 <!-- /TOC -->
 
@@ -463,3 +466,109 @@ iex(18)> url # since the expectation matches, rest of the string is bound to the
   iex(6)> test_num.(1)
   :positive
   ```
+
+## 3.3 Conditionals
+
+### 3.3.1 Branching with multiclause functions
+
+  + We have already seen this -
+
+  ```elixir
+  defmodule TestNum do # the three clauses constitute three conditional branches
+    def test(x) when x < 0, do: :negative
+    def test(0), do: :zero
+    def test(x), do: :positive
+  end
+  ```
+
+  The above can be represented in a typical imperative language (javascript) as
+
+  ```javascript
+  function test(x){
+    if (x < 0) return "negative";
+    if (x == 0) return "zero";
+    return "positive";
+  }
+  ```
+
+  + Another example - to check if given list is empty
+
+  ```elixir
+  defmodule TestList do
+    def empty?([]), do: true
+    def empty?([_|_]), do: false
+  end
+  ```
+
+  + Pattern matching can allow implementing polymorphic functions.
+
+  ```elixir
+  iex(1)> defmodule Polymorphic do # double the input
+            def double(x) when is_number(x), do: 2 * x # for number multiply by two
+            def double(x) when is_binary(x), do: x <> x # for string concat it to itself
+          end
+
+  iex(2)> Polymorphic.double(3)
+  6
+  iex(3)> Polymorphic.double("Jar")
+  "JarJar"
+  ```
+
+  + recursion is made easy by multiclauses.
+
+  ```elixir
+  iex(4)> defmodule Fact do
+    def fact(0), do: 1
+    def fact(n), do: n * fact(n - 1)
+  end
+
+  iex(5)> Fact.fact(1)
+  1
+  iex(6)> Fact.fact(3)
+  6
+  ```
+
+  + Multiclause-powered recursion is also the primary building block for looping.
+
+  ```elixir
+  iex(7)> defmodule ListHelper do
+            def sum([]), do: 0
+            def sum([head | tail]), do: head + sum(tail)
+          end
+  iex(8)> ListHelper.sum([])
+  0
+  iex(9)> ListHelper.sum([1, 2, 3])
+  6
+  ```
+
+  + Multiclauses and pattern-matching really shine when you have to combine functions that deal with different kind of results.
+
+  ```javascript
+  var result = callSomeOperation(...);
+  if (result) {
+    doSomething(result);
+  } else {
+    reportError();
+  }
+  ```
+
+  ```elixir
+  defmodule LinesCounter do
+    def count(path) do
+      File.read(path) # the main code
+      |> lines_num
+    end
+
+    defp lines_num({:ok, contents}) do # success branch
+      contents # start with content
+      |> String.split("\n") # split it into list of lines
+      |> length # return length of list
+    end
+
+    defp lines_num(error), do: error # error branch, return the error
+  end
+  ```
+
+### 3.3.2 Classical branching constructs
+
+  + Multiclauses require creating a separate function and passing necessary arguments. Sometimes it's simpler to use a classical branching construct. The macros `if`, `unless`, `cond` and `case` provide such functionality.
