@@ -19,6 +19,9 @@
 - [3.3 Conditionals](#33-conditionals)
 	- [3.3.1 Branching with multiclause functions](#331-branching-with-multiclause-functions)
 	- [3.3.2 Classical branching constructs](#332-classical-branching-constructs)
+		- [if and unless](#if-and-unless)
+		- [cond](#cond)
+		- [case](#case)
 
 <!-- /TOC -->
 
@@ -572,3 +575,82 @@ iex(18)> url # since the expectation matches, rest of the string is bound to the
 ### 3.3.2 Classical branching constructs
 
   + Multiclauses require creating a separate function and passing necessary arguments. Sometimes it's simpler to use a classical branching construct. The macros `if`, `unless`, `cond` and `case` provide such functionality.
+
+#### if and unless
+
+  + Syntax
+
+  ```elixir
+  if condition do
+    ...
+  else
+    ...
+  end
+
+  if condition, do: something, else: another_thing # a one-liner syntax
+  ```
+
+  ```elixir
+  iex(1)> if 5 > 3, do: :one
+  :one
+  iex(2)> if 5 < 3, do: :one
+  nil
+  iex(3)> if 5 < 3, do: :one, else: :two
+  :two
+
+  def max(a, b) do
+    if a >= b, do: a, else: b
+  end
+
+  def max(a, b) do
+    unless a >= b, do: b, else a
+  end
+  ```
+
+#### cond
+
+  + syntax
+
+  ```elixir
+  cond do
+    expression_1 ->
+    ...
+    expression_2 ->
+    ...
+  end
+  ```
+
+  The result of `cond` is the result of the corresponding executed block.
+
+  ```elixir
+  def max(a, b) do
+    cond do
+      a >= b -> a
+      true -> b # equivalent of default clause. cond will throw an error if default is not present
+    end
+  end
+  ```
+
+#### case
+
+  + syntax
+
+  ```elixir
+  case expression do
+    pattern1 ->
+    pattern2 ->
+    ...
+    _ -> ... # default clause that always matches
+  end
+  ```
+
+  In case of `case`, the provided expression is evaluated and then the result is pattern-matched against given clauses.
+
+  ```elixir
+  def max(a, b) do
+    case a >= b do
+      true -> a
+      false -> b
+    end
+  end
+  ```
