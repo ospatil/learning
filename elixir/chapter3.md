@@ -1,6 +1,6 @@
 # Chapter 3
 
-<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+<!-- TOC depthFrom:2 depthTo:6 insertAnchor:false orderedList:false updateOnSave:true withLinks:true -->
 
 - [3.1 Pattern matching](#31-pattern-matching)
 	- [3.1.1 The match operator](#311-the-match-operator)
@@ -22,6 +22,11 @@
 		- [if and unless](#if-and-unless)
 		- [cond](#cond)
 		- [case](#case)
+- [3.4 Loops and iterations](#34-loops-and-iterations)
+	- [3.4.1 Iterating with recursion](#341-iterating-with-recursion)
+	- [3.4.2 Tail function calls](#342-tail-function-calls)
+		- [Recognizing tail-calls](#recognizing-tail-calls)
+	- [3.4.3 Higher-order functions](#343-higher-order-functions)
 
 <!-- /TOC -->
 
@@ -653,4 +658,133 @@ iex(18)> url # since the expectation matches, rest of the string is bound to the
       false -> b
     end
   end
+  ```
+
+## 3.4 Loops and iterations
+
+### 3.4.1 Iterating with recursion
+
+  + Basic approach
+
+  ```elixir
+  defmodule NaturalNums do
+    def print(1), do: IO.puts(1)
+
+    def print(n) do
+      print(n - 1)
+      IO.puts(n)
+    end
+  end
+
+  iex(1)> NaturalNums.print(3)
+  1
+  2
+  3
+  ```
+
+  + Calculating sum of list -
+
+  ```elixir
+  defmodule ListHelper do
+    def sum([]), do: 0
+
+    def sum([head | tail]) do
+      head + sum(tail)
+    end
+  end
+
+  iex(1)> ListHelper.sum([1, 2, 3])
+  6
+  iex(2)> ListHelper.sum([])
+  0
+  ```
+
+  + The above code is not tail-recursive so it can consume all memory with large enough list. The solution to this problem lies in **tail-recursive** approach.
+
+### 3.4.2 Tail function calls
+
+  + If the last thing a functino does is call another function (or itself), we are dealing with tail call.
+
+  ```elixir
+  def original_fun(...) do
+    ...
+    another_fun(...) # tail call
+  end
+  ```
+
+  + Elixir supports **tail-call optimization**. In this case, calling a function doesn't result in usual stack push, which means no additional memory is consumed.
+
+  > *How does it work?*
+  >
+  > In the example above, the last thing that is done is call `another_fun`. The final result of `original_function` is the result of `another_fun`. This is why the compiler can safely perform the operation by jumping to the beginning of another_fun without doing additional memory allocation. When another_fun finishes, you return to whatever place original_fun was called from.
+
+  + Tail-recursive version of list sum -
+
+  ```elixir
+  defmodule ListHelper do
+    def sum(list) do
+      do_sum(0, list)
+    end
+
+    defp do_sum(current_sum, []) do # base condition in recursion
+      current_sum
+    end
+
+    defp do_sum(current_sum, [head | tail]) do
+      do_sum(head + current_sum, tail) # more idiomatic way is "head + current_sum |> do_sum(tail)"
+    end
+  end
+  ```
+
+#### Recognizing tail-calls
+
+  + A tail call can happen in a conditional expression.
+
+  ```elixir
+  def fun(...) do
+    ...
+    if something do
+      ...
+      another_fun(...) # tail call
+    end
+  end
+  ```
+
+  + The following is **not** a tail call.
+
+  ```elixir
+  def fun(...) do
+    1 + another_fun(...)
+  end
+  ```
+
+### 3.4.3 Higher-order functions
+
+  + A higher-order function is that takes functions as arguments and/or returns functions.
+  + `Enum` module contains a bunch of higher-order functions to work with enumerables.
+
+  ```elixir
+  iex(1)> Enum.each( # iterate on enumerable
+            [1, 2, 3],
+            fn(x) -> IO.puts(x) end
+          )
+  1
+  2
+  3
+
+  iex(1)> Enum.map( # transform each item
+            [1, 2, 3],
+            &(2 * &1)
+          )
+  [2, 4, 6]
+
+
+  iex(3)> Enum.filter( # filter
+            [1, 2, 3],
+            &(rem(&1, 2) == 1)
+          )
+  [1, 3]
+
+  iex(5)> Enum.reduce([1,2,3], 0, &+/2) # reduce or fold which accumulates the result in accumulator
+  6
   ```
