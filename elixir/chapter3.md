@@ -27,6 +27,8 @@
 	- [3.4.2 Tail function calls](#342-tail-function-calls)
 		- [Recognizing tail-calls](#recognizing-tail-calls)
 	- [3.4.3 Higher-order functions](#343-higher-order-functions)
+	- [3.4.4 Comprehensions](#344-comprehensions)
+	- [3.4.5 Streams](#345-streams)
 
 <!-- /TOC -->
 
@@ -787,4 +789,96 @@ iex(18)> url # since the expectation matches, rest of the string is bound to the
 
   iex(5)> Enum.reduce([1,2,3], 0, &+/2) # reduce or fold which accumulates the result in accumulator
   6
+  ```
+
+### 3.4.4 Comprehensions
+
+  + Another construct to iterate and transform enumerables.
+
+  ```elixir
+  iex(1)> for x <- [1, 2, 3] do # iterates through each element and runs `do/end` block
+            x*x
+          end
+
+  iex(2)> for x <- [1, 2, 3], y <- [1, 2, 3], do: {x, y, x*y}  # nested iteration
+  [
+    {1, 1, 1}, {1, 2, 2}, {1, 3, 3},
+    {2, 1, 2}, {2, 2, 4}, {2, 3, 6},
+    {3, 1, 3}, {3, 2, 6}, {3, 3, 9}
+  ]
+
+  iex(3)> for x <- 1..9, y <- 1..9, do: {x, y, x*y}
+
+  iex(4)> multiplication_table =
+            for x <- 1..9, y <- 1..9,
+                into: %{} do # using a map as collectibale
+              {{x, y}, x*y}
+            end
+  iex(5)> multiplication_table[{7, 6}]
+  42
+
+  iex(6)> multiplication_table =
+            for x <- 1..9, y <- 1..9,
+                x <= y, # comprehension filter - evaluated for each element of the input enumerable
+                into: %{} do
+              {{x, y}, x*y}
+            end
+  iex(7)> multiplication_table[{6, 7}]
+  42
+  iex(8)> multiplication_table[{7, 6}]
+  nil
+  ```
+
+### 3.4.5 Streams
+
+  + Streams are special kind of enumerables that enable lazy composable operations over any enumerable.
+
+  + In the following example, each steps performs iteration to go through a list and produce a new list, which can be quite inefficient for large collections.
+
+  ```elixir
+  iex(3)> employees |>
+          Enum.with_index |>
+          Enum.each(
+            fn({employee, index}) ->
+              IO.puts "#{index + 1}. #{employee}"
+            end)
+  1. Alice
+  2. Bob
+  3. John
+  ```
+
+  + The above example becomes the following when used with streams.
+
+  ```elixir
+  iex(7)> employees |>
+          Stream.with_index |>
+          Enum.each( # iteration only takes place only once when demanded
+            fn({employee, index}) ->
+              IO.puts "#{index + 1}. #{employee}"
+            end)
+  1. Alice
+  2. Bob
+  3. John
+  ```
+
+  + With streams, iteration only takes place lazily when demanded, allowing us to do something like this -
+
+  ```elixir
+  iex(1)> stream = [1, 2, 3] |> # create a stream
+            Stream.map(fn(x) -> 2 * x end)
+  \#Stream<[enum: [1, 2, 3], # result of map function
+  funs: [#Function<44.45151713/1 in Stream.map/2>]]>
+
+  iex(2)> Enum.take(stream, 1) # Enum.take/2 iterates only until it collects desired elements. Other elements are not visited
+  [2]
+  ```
+
+  + `Streams` are very useful for slow and potentially large enumerable input like File IO.
+
+  ```elixir
+  def large_lines!(path) do
+    File.stream!(path)
+    |> Stream.map(&String.replace(&1, "\n", ""))
+    |> Enum.filter(&(String.length(&1) > 80))
+  end
   ```
