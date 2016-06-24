@@ -10,15 +10,14 @@ end
 
 # Calculating sum of a list - non tail-recursive
 defmodule ListHelper do
- def sum([]), do: 0
+  def sum([]), do: 0
 
- def sum([head | tail]) do
-   head + sum(tail)
- end
-end
+  def sum([head | tail]) do
+    head + sum(tail)
+  end
 
-defmodule ListHelperTR do
-  def sum(list) do
+  # Tail recursive version
+  def sum_tr(list) do
     do_sum(0, list)
   end
 
