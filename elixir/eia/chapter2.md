@@ -393,11 +393,11 @@
   For example -
   1. *Modifying a list* - when n<sup>th</sup> is modified, the new version will contain shallow copies of the first *n - 1* elements, followed by modified element and tail is completed shared as shown in the below image -
 
-  ![alt text](./img/list-modifing.png "Modifying a List")
+  ![alt text](../img/list-modifing.png "Modifying a List")
 
   2. *Pushing element at the top of the list* - it doesn't copy anything so it's a least expensive operation.
 
-  ![alt text](./img/list-push-to-top.png "Pushing to the top of a List")
+  ![alt text](../img/list-push-to-top.png "Pushing to the top of a List")
 
   >This is often used in Elixir programs when iteratively building lists. In such cases, it’s best to push consecutive elements to the top and then,after the list is constructed, reverse the entire list in a single pass
 
